@@ -63,16 +63,33 @@ runs:
       shell: bash
       run: pnpm install --frozen-lockfile
 
-    - name: Build Tauri (target win7)
+    # O `tauri build` recusa targets tier 3 (não aparecem no `rustup target list`),
+    # então replicamos o que ele faz: frontend → cargo build → tauri bundle.
+    - name: Build frontend
+      shell: bash
+      run: pnpm build
+
+    - name: Build Rust (target win7)
+      shell: bash
+      run: |
+        # Mesmo mecanismo do `tauri build --config`: o tauri-build mescla TAURI_CONFIG.
+        if [ -n '${{ inputs.extra-config }}' ]; then export TAURI_CONFIG='${{ inputs.extra-config }}'; fi
+        cargo build --release \
+          --manifest-path src-tauri/Cargo.toml \
+          --target ${{ steps.vars.outputs.triple }} \
+          --features tauri/custom-protocol \
+          -Zbuild-std=std,panic_abort
+
+    - name: Empacotar NSIS
       shell: bash
       run: |
         extra=()
         if [ -n '${{ inputs.extra-config }}' ]; then extra=(--config '${{ inputs.extra-config }}'); fi
-        pnpm tauri build \
+        pnpm tauri bundle \
           --target ${{ steps.vars.outputs.triple }} \
+          --bundles nsis \
           --config src-tauri/tauri.win7-${{ inputs.arch }}.conf.json \
-          "${extra[@]}" \
-          -- -Zbuild-std=std,panic_abort
+          "${extra[@]}"
 
     - name: win7-check (imports PE x Windows 7 SP1)
       shell: bash
