@@ -35,9 +35,7 @@ No Linux, o `tauri dev` precisa de `libwebkit2gtk-4.1-dev`. Ele valida UI e lóg
    ```bash
    gh secret set TAURI_SIGNING_PRIVATE_KEY < ~/.tauri/rocket-rust.key
    ```
-   ```bash
-   gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --body ""
-   ```
+   A chave não tem senha, então `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` não precisa existir (o workflow recebe string vazia). Se gerar uma chave com senha, cadastre esse secret também.
 
 ### Publicar uma versão
 
