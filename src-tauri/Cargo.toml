@@ -1,0 +1,32 @@
+[package]
+name = "rocket-rust"
+version = "0.1.0"
+description = "Rocket Rust"
+edition = "2021"
+
+[lib]
+name = "rocket_rust_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = [] }
+# Fixado no minor: usamos `configure_client`, que depende da versão do reqwest.
+tauri-plugin-updater = { version = "~2.14", default-features = false, features = ["rustls-tls", "zip"] }
+tauri-plugin-single-instance = "2"
+# Mesma versão de reqwest do updater; só para montar a lista de raízes TLS.
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
+# Raízes da Mozilla embutidas: o store de certificados do Win7 está desatualizado.
+webpki-root-certs = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

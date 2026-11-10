@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rocket Rust</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+  <body>
+    <main class="container">
+      <h1>Rocket Rust</h1>
+      <dl class="info">
+        <dt>Versão</dt><dd id="app-version">…</dd>
+        <dt>WebView2</dt><dd id="webview-version">…</dd>
+        <dt>Sistema</dt><dd id="os-info">…</dd>
+      </dl>
+
+      <section class="update">
+        <h2>Atualizações</h2>
+        <p id="update-status">Aguardando verificação…</p>
+        <progress id="update-progress" max="100" value="0" hidden></progress>
+        <button id="check-now" type="button">Verificar agora</button>
+      </section>
+    </main>
+  </body>
+</html>

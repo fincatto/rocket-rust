@@ -1,0 +1,8 @@
+# Binário compilado com o target padrão (Win10+). O CI espera que o
+# win7-check o REPROVE, provando que o checker detecta regressões.
+[package]
+name = "hello"
+version = "0.0.0"
+edition = "2021"
+
+[workspace]

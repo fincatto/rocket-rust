@@ -1,0 +1,6 @@
+# CRT estático: o Win7 não traz o VC++ Redistributable moderno.
+[target.x86_64-win7-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.i686-win7-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

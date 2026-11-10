@@ -1,0 +1,6 @@
+# Os targets *-win7-windows-msvc são tier 3: exigem nightly + `-Zbuild-std`.
+# Data fixada para builds reproduzíveis; atualizar conscientemente.
+[toolchain]
+channel = "nightly-2026-11-08"
+components = ["rust-src", "rustfmt", "clippy"]
+profile = "minimal"

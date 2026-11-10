@@ -1,0 +1,12 @@
+[package]
+name = "win7-check"
+version = "0.1.0"
+edition = "2021"
+description = "Verifica se executáveis PE só importam APIs existentes no Windows 7 SP1"
+
+# Projeto independente do src-tauri.
+[workspace]
+
+[dependencies]
+object = { version = "0.41", default-features = false, features = ["read_core", "pe", "std"] }
+serde_json = "1"

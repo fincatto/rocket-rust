@@ -1,0 +1,4 @@
+# Imports aceitos mesmo que o checker reclame, um por linha: dll!Funcao ou dll!*
+# Só adicione aqui com justificativa (ex.: import delay-load protegido por checagem
+# de versão em runtime). Exemplo:
+# user32.dll!GetDpiForWindow   # carregado via GetProcAddress pelo tao

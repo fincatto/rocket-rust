@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Prova que o checker funciona: um binário do target padrão (Win10+) TEM que falhar.
+  checker-selftest:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compilar fixture com toolchain estável (sem suporte a Win7)
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal
+          cargo +stable build --release --manifest-path tools/win7-check/fixtures/hello/Cargo.toml
+      - name: win7-check deve reprovar
+        shell: bash
+        run: |
+          if cargo run --release --manifest-path tools/win7-check/Cargo.toml -- check \
+               --exports tools/win7-check/data/win7sp1-exports-x64.json \
+               tools/win7-check/fixtures/hello/target/release/hello.exe; then
+            echo "::error::win7-check aprovou um binário incompatível com Win7"
+            exit 1
+          fi
+          echo "OK: checker detectou o binário incompatível"
+
+      # O próprio checker compilado para Win7, usado para gerar os dumps de exports na VM.
+      - name: Compilar win7-check para Win7
+        shell: bash
+        run: |
+          cargo build --release --manifest-path tools/win7-check/Cargo.toml \
+            --target x86_64-win7-windows-msvc -Zbuild-std=std,panic_abort
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win7-check-exe
+          path: |
+            tools/win7-check/target/x86_64-win7-windows-msvc/release/win7-check.exe
+            tests/win7-vm/guest/dump-exports.cmd
+
+  build:
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Par de builds para o E2E na VM Win7: v0.0.1 -> v0.0.2 apontando para o
+      # servidor local do host (10.0.2.2:8765). Ver tests/win7-vm/README.md.
+      - name: Build E2E "antigo" (0.0.1)
+        id: old
+        uses: ./.github/actions/build-win7
+        with:
+          arch: ${{ matrix.arch }}
+          extra-config: '{"version":"0.0.1","plugins":{"updater":{"endpoints":["http://10.0.2.2:8765/latest.json"],"dangerousInsecureTransportProtocol":true}}}'
+      - name: Guardar build antigo
+        shell: bash
+        run: mkdir -p e2e/old && cp "${{ steps.old.outputs.bundle-dir }}"/*-setup.exe* e2e/old/ && rm -rf "${{ steps.old.outputs.bundle-dir }}"
+
+      - name: Build E2E "novo" (0.0.2)
+        id: new
+        uses: ./.github/actions/build-win7
+        with:
+          arch: ${{ matrix.arch }}
+          extra-config: '{"version":"0.0.2","plugins":{"updater":{"endpoints":["http://10.0.2.2:8765/latest.json"],"dangerousInsecureTransportProtocol":true}}}'
+      - name: Guardar build novo
+        shell: bash
+        run: mkdir -p e2e/new && cp "${{ steps.new.outputs.bundle-dir }}"/*-setup.exe* e2e/new/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.arch }}
+          path: e2e/
+          retention-days: 14

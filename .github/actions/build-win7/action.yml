@@ -1,0 +1,84 @@
+name: Build Win7
+description: Compila o app para Windows 7 (x64/x86), empacota o NSIS e roda o win7-check.
+
+inputs:
+  arch:
+    description: "x64 ou x86"
+    required: true
+  extra-config:
+    description: "JSON/arquivo extra passado a `tauri build --config` (opcional)"
+    required: false
+    default: ""
+
+outputs:
+  bundle-dir:
+    description: Diretório com o *-setup.exe e o .sig
+    value: ${{ steps.vars.outputs.bundle-dir }}
+
+runs:
+  using: composite
+  steps:
+    - id: vars
+      shell: bash
+      run: |
+        case "${{ inputs.arch }}" in
+          x64) triple=x86_64-win7-windows-msvc ;;
+          x86) triple=i686-win7-windows-msvc ;;
+          *) echo "arch inválida"; exit 1 ;;
+        esac
+        echo "triple=$triple" >> "$GITHUB_OUTPUT"
+        echo "bundle-dir=src-tauri/target/$triple/release/bundle/nsis" >> "$GITHUB_OUTPUT"
+
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 10
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: pnpm
+
+    - name: Toolchain Rust (lida de rust-toolchain.toml)
+      shell: bash
+      run: rustup show active-toolchain || rustup toolchain install
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          src-tauri -> target
+          tools/win7-check -> target
+        key: ${{ steps.vars.outputs.triple }}
+
+    - name: Cache WebView2 109
+      uses: actions/cache@v4
+      with:
+        path: src-tauri/webview2
+        key: webview2-109.0.1518.78-${{ inputs.arch }}-${{ hashFiles('scripts/fetch-webview2-109.ps1') }}
+
+    - name: Baixar e validar WebView2 Fixed Runtime 109
+      shell: pwsh
+      run: ./scripts/fetch-webview2-109.ps1 -Arch ${{ inputs.arch }}
+
+    - name: Dependências do frontend
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Build Tauri (target win7)
+      shell: bash
+      run: |
+        extra=()
+        if [ -n '${{ inputs.extra-config }}' ]; then extra=(--config '${{ inputs.extra-config }}'); fi
+        pnpm tauri build \
+          --target ${{ steps.vars.outputs.triple }} \
+          --config src-tauri/tauri.win7-${{ inputs.arch }}.conf.json \
+          "${extra[@]}" \
+          -- -Zbuild-std=std,panic_abort
+
+    - name: win7-check (imports PE x Windows 7 SP1)
+      shell: bash
+      run: |
+        cargo run --release --manifest-path tools/win7-check/Cargo.toml -- check \
+          --exports tools/win7-check/data/win7sp1-exports-${{ inputs.arch }}.json \
+          --allow tools/win7-check/allow.txt \
+          src-tauri/target/${{ steps.vars.outputs.triple }}/release/rocket-rust.exe \
+          ${{ steps.vars.outputs.bundle-dir }}/*-setup.exe
