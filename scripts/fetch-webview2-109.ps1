@@ -49,19 +49,26 @@ function Assert-Runtime([string]$Dir) {
   $fileVersion = (Get-Item $exe).VersionInfo.FileVersion
   if ($fileVersion -ne $Version) { throw "versão inesperada: $fileVersion (esperado $Version)" }
 
+  # Exceções explícitas: componentes de terceiros que a própria Microsoft distribui no Edge.
+  $OtherSigners = @{
+    'widevinecdm.dll' = 'O=Google LLC'  # módulo DRM Widevine, assinado pelo Google
+  }
+
   $bad = @()
   $files = Get-ChildItem $Dir -Recurse -File -Include *.exe, *.dll
   foreach ($f in $files) {
     $sig = Get-AuthenticodeSignature $f.FullName
     $subject = if ($sig.SignerCertificate) { $sig.SignerCertificate.Subject } else { '' }
-    if ($sig.Status -ne 'Valid' -or $subject -notmatch 'O=Microsoft Corporation') {
+    $expected = $OtherSigners[$f.Name.ToLower()]
+    if (-not $expected) { $expected = 'O=Microsoft Corporation' }
+    if ($sig.Status -ne 'Valid' -or $subject -notmatch [regex]::Escape($expected)) {
       $bad += "$($f.Name): $($sig.Status) [$subject]"
     }
   }
   if ($bad.Count -gt 0) {
     throw "binários sem assinatura válida da Microsoft:`n  " + ($bad -join "`n  ")
   }
-  Write-Host "OK: $($files.Count) binários assinados pela Microsoft, versão $fileVersion"
+  Write-Host "OK: $($files.Count) binários com assinatura válida (Microsoft; Widevine: Google), versão $fileVersion"
 }
 
 if (Test-Path $Marker) {
