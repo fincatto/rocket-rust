@@ -1,6 +1,8 @@
 mod osinfo;
 mod selftest;
 mod updater;
+#[cfg(windows)]
+mod win7_shims;
 
 use serde::Serialize;
 use tauri::Manager;

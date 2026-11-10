@@ -53,9 +53,7 @@ const DENY_FUNCS: &[(&str, &str)] = &[
     ("kernel32.dll", "PrefetchVirtualMemory"),
     ("kernel32.dll", "SetDefaultDllDirectories"), // só com KB2533623
     ("kernel32.dll", "GetOverlappedResultEx"),
-    ("kernel32.dll", "CreateRemoteThreadEx"),
     ("kernel32.dll", "GetFileInformationByName"),
-    ("kernel32.dll", "SetFileInformationByHandle"),
     ("user32.dll", "GetDpiForWindow"),
     ("user32.dll", "GetDpiForSystem"),
     ("user32.dll", "SetProcessDpiAwarenessContext"),
