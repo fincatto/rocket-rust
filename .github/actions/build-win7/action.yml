@@ -29,11 +29,11 @@ runs:
         echo "triple=$triple" >> "$GITHUB_OUTPUT"
         echo "bundle-dir=src-tauri/target/$triple/release/bundle/nsis" >> "$GITHUB_OUTPUT"
 
-    - uses: pnpm/action-setup@v4
+    - uses: pnpm/action-setup@v6
       with:
         version: 10
 
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v7
       with:
         node-version: 22
         cache: pnpm
@@ -50,7 +50,7 @@ runs:
         key: ${{ steps.vars.outputs.triple }}
 
     - name: Cache WebView2 109
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: src-tauri/webview2
         key: webview2-109.0.1518.78-${{ inputs.arch }}-${{ hashFiles('scripts/fetch-webview2-109.ps1') }}

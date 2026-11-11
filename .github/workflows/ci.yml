@@ -15,7 +15,7 @@ jobs:
   checker-selftest:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Compilar fixture com toolchain estável (sem suporte a Win7)
         shell: bash
         run: |
@@ -38,7 +38,7 @@ jobs:
         run: |
           cargo build --release --manifest-path tools/win7-check/Cargo.toml \
             --target x86_64-win7-windows-msvc -Zbuild-std=std,panic_abort
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: win7-check-exe
           path: |
@@ -55,7 +55,7 @@ jobs:
       TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Par de builds para o E2E na VM Win7: v0.0.1 -> v0.0.2 apontando para o
       # servidor local do host (10.0.2.2:8765). Ver tests/win7-vm/README.md.
@@ -79,7 +79,7 @@ jobs:
         shell: bash
         run: mkdir -p e2e/new && cp "${{ steps.new.outputs.bundle-dir }}"/*-setup.exe* e2e/new/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: e2e-${{ matrix.arch }}
           path: e2e/
